@@ -24,10 +24,20 @@ var cerebro = null
 @onready var vista_mapa_raton: VistaLaberinto = $vista_mapa_raton
 @onready var raton: Raton = $raton
 @onready var paso_timer: Timer = $paso_timer
+@onready var hud = $ui/hud
 
 @onready var sfx_paso: AudioStreamPlayer = $sfx_paso
 @onready var sfx_choque: AudioStreamPlayer = $sfx_choque
 @onready var sfx_meta: AudioStreamPlayer = $sfx_meta
+
+signal pasos_cambiados(pasos: int)
+signal visitadas_cambiadas(cantidad: int)
+signal fase_cambiada(nombre: String)
+signal corrida_terminada(exito: bool, pasos_exp: int, pasos_speed: int)
+
+var _visitadas: Dictionary = {}
+var _tiempo_inicio: float = 0.0
+var _corrida_activa: bool = true
 
 # === ESTADO DE LA CORRIDA (B3) ===
 # Contrato sugerido para comunicarte con el HUD (hud.gd) sin acoplarlos:
@@ -53,17 +63,35 @@ func _ready() -> void:
 
 	raton.choque.connect(func(): sfx_choque.play())
 	raton.paso_terminado.connect(func(): sfx_paso.play())
+
+	pasos_cambiados.connect(hud.update_pasos)
+	visitadas_cambiadas.connect(hud.update_visitadas)
+	fase_cambiada.connect(hud.update_fase)
+
+	_tiempo_inicio = Time.get_ticks_msec()
+	_corrida_activa = true
+	fase_cambiada.emit("EXPLORANDO")
 	# La vista derecha ("mapa del ratón") queda vacía hasta que la conectes:
 	# TODO (PARCIAL · M2): configura vista_mapa_raton con el laberinto que TU
 	# cerebro descubre (Laberinto.vacio + poner_pared al sensar) y redibuja
 	# cada vez que aprenda una pared. Distingue visitadas / no visitadas.
 
 
+func _process(_delta: float) -> void:
+	if _corrida_activa:
+		var segundos = (Time.get_ticks_msec() - _tiempo_inicio) / 1000.0
+		hud.update_tiempo(segundos)
+
+
 func _on_paso_timer_timeout() -> void:
 	if raton.ocupado():
 		return
 	cerebro.paso(raton)
-	# TODO (PARCIAL · B1): actualiza pasos / visitadas / cronómetro en el HUD.
+
+	_visitadas[raton.celda] = true
+	pasos_cambiados.emit(raton.pasos)
+	visitadas_cambiadas.emit(_visitadas.size())
+
 	if laberinto.es_meta(raton.celda):
 		_meta_alcanzada()
 
