@@ -25,6 +25,10 @@ var cerebro = null
 @onready var raton: Raton = $raton
 @onready var paso_timer: Timer = $paso_timer
 
+@onready var sfx_paso: AudioStreamPlayer = $sfx_paso
+@onready var sfx_choque: AudioStreamPlayer = $sfx_choque
+@onready var sfx_meta: AudioStreamPlayer = $sfx_meta
+
 # === ESTADO DE LA CORRIDA (B3) ===
 # Contrato sugerido para comunicarte con el HUD (hud.gd) sin acoplarlos:
 #   signal pasos_cambiados(pasos: int)
@@ -46,6 +50,9 @@ func _ready() -> void:
 				laberinto.inicio)
 	else:
 		cerebro = CerebroWallFollower.new()
+
+	raton.choque.connect(func(): sfx_choque.play())
+	raton.paso_terminado.connect(func(): sfx_paso.play())
 	# La vista derecha ("mapa del ratón") queda vacía hasta que la conectes:
 	# TODO (PARCIAL · M2): configura vista_mapa_raton con el laberinto que TU
 	# cerebro descubre (Laberinto.vacio + poner_pared al sensar) y redibuja
@@ -63,6 +70,7 @@ func _on_paso_timer_timeout() -> void:
 
 func _meta_alcanzada() -> void:
 	paso_timer.stop()
+	sfx_meta.play()
 	print("¡Meta alcanzada en ", raton.pasos, " pasos!")
 	# TODO (PARCIAL · B3): esto debe ser una máquina de estados explícita
 	# (EXPLORANDO → META → VOLVIENDO → SPEED_RUN → FIN), con pantalla final
