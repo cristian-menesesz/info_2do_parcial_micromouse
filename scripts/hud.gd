@@ -14,26 +14,24 @@ extends PanelContainer
 
 
 func update_fase(nombre: String) -> void:
-	# TODO (PARCIAL · B3): refleja la fase actual (EXPLORANDO, SPEED RUN...).
-	pass
+	fase_label.text = "fase: %s" % nombre
 
 
 func update_pasos(pasos: int) -> void:
-	# TODO (PARCIAL · B1): refleja los pasos en pasos_label.text.
-	pass
+	pasos_label.text = "pasos: %d" % pasos
 
 
 func update_visitadas(cantidad: int) -> void:
-	# TODO (PARCIAL · B1): refleja las celdas visitadas (y, si quieres, el
-	# porcentaje del laberinto explorado).
-	pass
+	visitadas_label.text = "visitadas: %d" % cantidad
 
 
 func update_tiempo(segundos: float) -> void:
-	# TODO (PARCIAL · B1): cronómetro de la corrida.
-	pass
+	tiempo_label.text = "tiempo: %.1f s" % segundos
 
 
 func update_record(pasos: int) -> void:
 	# TODO (PARCIAL · M4): mejor marca guardada para el laberinto actual.
-	pass
+	if pasos < 0:
+		record_label.text = "récord: —"
+	else:
+		record_label.text = "récord: %d pasos" % pasos
