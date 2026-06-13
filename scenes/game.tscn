@@ -116,8 +116,40 @@ text = "Vel x1"
 layout_mode = 2
 text = "Reiniciar"
 
+[node name="pantalla_final" type="PanelContainer" parent="ui"]
+visible = false
+offset_left = 280.0
+offset_top = 200.0
+offset_right = 840.0
+offset_bottom = 480.0
+
+[node name="col" type="VBoxContainer" parent="ui/pantalla_final"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="titulo_final" type="Label" parent="ui/pantalla_final/col"]
+layout_mode = 2
+text = "🏁  CORRIDA TERMINADA"
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="exp_label" type="Label" parent="ui/pantalla_final/col"]
+layout_mode = 2
+text = "Exploración: — pasos"
+theme_override_font_sizes/font_size = 16
+
+[node name="speed_label" type="Label" parent="ui/pantalla_final/col"]
+layout_mode = 2
+text = "Speed run: — pasos"
+theme_override_font_sizes/font_size = 16
+
+[node name="btn_jugar_nuevo" type="Button" parent="ui/pantalla_final/col"]
+layout_mode = 2
+text = "Jugar de nuevo"
+
 [connection signal="timeout" from="paso_timer" to="." method="_on_paso_timer_timeout"]
 [connection signal="pressed" from="ui/hud/margen/columna/botones/boton_pausa" to="." method="_on_boton_pausa_pressed"]
 [connection signal="pressed" from="ui/hud/margen/columna/botones/boton_paso" to="." method="_on_boton_paso_pressed"]
 [connection signal="pressed" from="ui/hud/margen/columna/botones/boton_velocidad" to="." method="_on_boton_velocidad_pressed"]
 [connection signal="pressed" from="ui/hud/margen/columna/botones/boton_reiniciar" to="." method="_on_boton_reiniciar_pressed"]
+[connection signal="pressed" from="ui/pantalla_final/col/btn_jugar_nuevo" to="." method="_on_boton_reiniciar_pressed"]

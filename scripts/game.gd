@@ -28,6 +28,9 @@ var cerebro = null
 @onready var hud = $ui/hud
 @onready var btn_pausa: Button = $ui/hud/margen/columna/botones/boton_pausa
 @onready var btn_velocidad: Button = $ui/hud/margen/columna/botones/boton_velocidad
+@onready var pantalla_final: PanelContainer = $ui/pantalla_final
+@onready var lbl_resultado_exp: Label = $ui/pantalla_final/col/exp_label
+@onready var lbl_resultado_speed: Label = $ui/pantalla_final/col/speed_label
 
 @onready var sfx_paso: AudioStreamPlayer = $sfx_paso
 @onready var sfx_choque: AudioStreamPlayer = $sfx_choque
@@ -47,14 +50,10 @@ const VELOCIDADES: Array[float] = [0.12, 0.06, 0.03]
 const NOMBRES_VEL: Array[String] = ["Vel x1", "Vel x2", "Vel x4"]
 var _idx_vel: int = 0
 
-# === ESTADO DE LA CORRIDA (B3) ===
-# Contrato sugerido para comunicarte con el HUD (hud.gd) sin acoplarlos:
-#   signal pasos_cambiados(pasos: int)
-#   signal visitadas_cambiadas(cantidad: int)
-#   signal fase_cambiada(nombre: String)
-#   signal corrida_terminada(exito: bool, pasos: int)
-# TODO (PARCIAL · B1/B3): declara el estado de la corrida (fase, cronómetro,
-# celdas visitadas) y sus señales.
+enum Fase { EXPLORANDO, META, VOLVIENDO, SPEED_RUN, FIN }
+var _fase: Fase = Fase.EXPLORANDO
+var _pasos_exploracion: int = 0
+var _pasos_speed_run: int = 0
 
 
 func _iniciar_corrida() -> void:
@@ -78,8 +77,13 @@ func _iniciar_corrida() -> void:
 	_tiempo_inicio = Time.get_ticks_msec()
 	_corrida_activa = true
 	_pausado = false
+	_fase = Fase.EXPLORANDO
+	_pasos_exploracion = 0
+	_pasos_speed_run = 0
 
 	btn_pausa.text = "Pausa"
+
+	pantalla_final.visible = false
 
 	paso_timer.wait_time = VELOCIDADES[_idx_vel]
 	paso_timer.start()
@@ -94,6 +98,8 @@ func _ready() -> void:
 
 	raton.choque.connect(func(): sfx_choque.play())
 	raton.paso_terminado.connect(func(): sfx_paso.play())
+
+	pantalla_final.visible = false
 
 	_iniciar_corrida()
 	# La vista derecha ("mapa del ratón") queda vacía hasta que la conectes:
@@ -112,14 +118,28 @@ func _ejecutar_un_paso() -> void:
 	if raton.ocupado():
 		return
 
-	cerebro.paso(raton)
+	match _fase:
+		Fase.EXPLORANDO:
+			cerebro.paso(raton)
 
-	_visitadas[raton.celda] = true
-	pasos_cambiados.emit(raton.pasos)
-	visitadas_cambiadas.emit(_visitadas.size())
+			_visitadas[raton.celda] = true
 
-	if laberinto.es_meta(raton.celda):
-		_meta_alcanzada()
+			pasos_cambiados.emit(raton.pasos)
+			visitadas_cambiadas.emit(_visitadas.size())
+
+			if laberinto.es_meta(raton.celda):
+				_meta_alcanzada()
+
+		Fase.VOLVIENDO:
+			# TODO (M3)
+			pass
+
+		Fase.SPEED_RUN:
+			# TODO (M3)
+			pass
+
+		Fase.FIN:
+			paso_timer.stop()
 
 
 func _on_paso_timer_timeout() -> void:
@@ -127,15 +147,23 @@ func _on_paso_timer_timeout() -> void:
 
 
 func _meta_alcanzada() -> void:
-	paso_timer.stop()
+	_pasos_exploracion = raton.pasos
+	_fase = Fase.META
 	sfx_meta.play()
+	fase_cambiada.emit("META")
+	print("¡Meta alcanzada en ", _pasos_exploracion, " pasos!")
+
+	# Por ahora va directo a FIN. En M3 pasará a VOLVIENDO primero.
+	_fase = Fase.FIN
 	_corrida_activa = false
-	print("¡Meta alcanzada en ", raton.pasos, " pasos!")
-	# TODO (PARCIAL · B3): esto debe ser una máquina de estados explícita
-	# (EXPLORANDO → META → VOLVIENDO → SPEED_RUN → FIN), con pantalla final
-	# (pasos de exploración vs. pasos del speed run) y opción de reiniciar.
-	# TODO (PARCIAL · B4): sonido de meta (assets/sounds/meta.wav). Conecta
-	# también raton.choque a un sonido de choque y cada avance a un tic.
+	paso_timer.stop()
+	fase_cambiada.emit("FIN")
+
+	lbl_resultado_exp.text = "Exploración: %d pasos" % _pasos_exploracion
+	lbl_resultado_speed.text = "Speed run: (pendiente — M3)"
+	pantalla_final.visible = true
+
+	corrida_terminada.emit(true, _pasos_exploracion, 0)
 	# TODO (PARCIAL · M3): aquí continúa el ciclo: volver al inicio y ejecutar
 	# el speed run sobre el mapa descubierto, dibujando ambas rutas.
 	# TODO (PARCIAL · M4): guarda el récord (mejores pasos) de ESTE laberinto
