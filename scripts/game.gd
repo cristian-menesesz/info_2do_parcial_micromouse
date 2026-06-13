@@ -24,7 +24,10 @@ var cerebro = null
 @onready var vista_mapa_raton: VistaLaberinto = $vista_mapa_raton
 @onready var raton: Raton = $raton
 @onready var paso_timer: Timer = $paso_timer
+
 @onready var hud = $ui/hud
+@onready var btn_pausa: Button = $ui/hud/margen/columna/botones/boton_pausa
+@onready var btn_velocidad: Button = $ui/hud/margen/columna/botones/boton_velocidad
 
 @onready var sfx_paso: AudioStreamPlayer = $sfx_paso
 @onready var sfx_choque: AudioStreamPlayer = $sfx_choque
@@ -39,6 +42,11 @@ var _visitadas: Dictionary = {}
 var _tiempo_inicio: float = 0.0
 var _corrida_activa: bool = true
 
+var _pausado: bool = false
+const VELOCIDADES: Array[float] = [0.12, 0.06, 0.03]
+const NOMBRES_VEL: Array[String] = ["Vel x1", "Vel x2", "Vel x4"]
+var _idx_vel: int = 0
+
 # === ESTADO DE LA CORRIDA (B3) ===
 # Contrato sugerido para comunicarte con el HUD (hud.gd) sin acoplarlos:
 #   signal pasos_cambiados(pasos: int)
@@ -49,28 +57,45 @@ var _corrida_activa: bool = true
 # celdas visitadas) y sus señales.
 
 
-func _ready() -> void:
+func _iniciar_corrida() -> void:
 	laberinto = Laberinto.desde_archivo(archivo_laberinto)
 	tam_celda = minf(56.0, 608.0 / maxf(laberinto.ancho, laberinto.alto))
 	vista_dios.configurar(laberinto, ORIGEN, tam_celda)
 	raton.configurar(laberinto, ORIGEN, tam_celda)
+
 	if usar_cerebro_estudiante:
 		cerebro = CerebroEstudiante.new()
-		cerebro.preparar(laberinto.ancho, laberinto.alto, laberinto.metas,
-				laberinto.inicio)
+		cerebro.preparar(
+			laberinto.ancho,
+			laberinto.alto,
+			laberinto.metas,
+			laberinto.inicio
+		)
 	else:
 		cerebro = CerebroWallFollower.new()
 
-	raton.choque.connect(func(): sfx_choque.play())
-	raton.paso_terminado.connect(func(): sfx_paso.play())
+	_visitadas.clear()
+	_tiempo_inicio = Time.get_ticks_msec()
+	_corrida_activa = true
+	_pausado = false
 
+	btn_pausa.text = "Pausa"
+
+	paso_timer.wait_time = VELOCIDADES[_idx_vel]
+	paso_timer.start()
+
+	fase_cambiada.emit("EXPLORANDO")
+
+
+func _ready() -> void:
 	pasos_cambiados.connect(hud.update_pasos)
 	visitadas_cambiadas.connect(hud.update_visitadas)
 	fase_cambiada.connect(hud.update_fase)
 
-	_tiempo_inicio = Time.get_ticks_msec()
-	_corrida_activa = true
-	fase_cambiada.emit("EXPLORANDO")
+	raton.choque.connect(func(): sfx_choque.play())
+	raton.paso_terminado.connect(func(): sfx_paso.play())
+
+	_iniciar_corrida()
 	# La vista derecha ("mapa del ratón") queda vacía hasta que la conectes:
 	# TODO (PARCIAL · M2): configura vista_mapa_raton con el laberinto que TU
 	# cerebro descubre (Laberinto.vacio + poner_pared al sensar) y redibuja
@@ -78,14 +103,15 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if _corrida_activa:
+	if _corrida_activa and not _pausado:
 		var segundos = (Time.get_ticks_msec() - _tiempo_inicio) / 1000.0
 		hud.update_tiempo(segundos)
 
 
-func _on_paso_timer_timeout() -> void:
+func _ejecutar_un_paso() -> void:
 	if raton.ocupado():
 		return
+
 	cerebro.paso(raton)
 
 	_visitadas[raton.celda] = true
@@ -94,6 +120,10 @@ func _on_paso_timer_timeout() -> void:
 
 	if laberinto.es_meta(raton.celda):
 		_meta_alcanzada()
+
+
+func _on_paso_timer_timeout() -> void:
+	_ejecutar_un_paso()
 
 
 func _meta_alcanzada() -> void:
@@ -116,24 +146,27 @@ func _meta_alcanzada() -> void:
 # --- Botones del panel (ya conectados en el editor; cuerpos por hacer) ---
 
 func _on_boton_pausa_pressed() -> void:
-	# TODO (PARCIAL · B2): pausa/reanuda la corrida (paso_timer) y refleja el
-	# estado en el texto del botón.
-	pass
+	_pausado = !_pausado
+	if _pausado:
+		paso_timer.stop()
+		btn_pausa.text = "Reanudar"
+	else:
+		paso_timer.start()
+		btn_pausa.text = "Pausa"
 
 
 func _on_boton_paso_pressed() -> void:
-	# TODO (PARCIAL · B2): con la corrida pausada, ejecuta UN solo paso del
-	# cerebro (depuración paso a paso).
-	pass
+	if _pausado and _corrida_activa:
+		_ejecutar_un_paso()
 
 
 func _on_boton_velocidad_pressed() -> void:
-	# TODO (PARCIAL · B2): cicla la velocidad (p. ej. x1 → x2 → x4 cambiando
-	# paso_timer.wait_time y raton.duracion_paso).
-	pass
+	_idx_vel = (_idx_vel + 1) % VELOCIDADES.size()
+	paso_timer.wait_time = VELOCIDADES[_idx_vel]
+	raton.duracion_paso = VELOCIDADES[_idx_vel] * 0.8
+	btn_velocidad.text = NOMBRES_VEL[_idx_vel]
 
 
 func _on_boton_reiniciar_pressed() -> void:
-	# TODO (PARCIAL · B2): reinicia la corrida completa: ratón al inicio,
-	# cerebro nuevo, contadores a cero, timer corriendo.
-	pass
+	paso_timer.stop()
+	_iniciar_corrida()
