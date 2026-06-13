@@ -99,6 +99,7 @@ func _on_paso_timer_timeout() -> void:
 func _meta_alcanzada() -> void:
 	paso_timer.stop()
 	sfx_meta.play()
+	_corrida_activa = false
 	print("¡Meta alcanzada en ", raton.pasos, " pasos!")
 	# TODO (PARCIAL · B3): esto debe ser una máquina de estados explícita
 	# (EXPLORANDO → META → VOLVIENDO → SPEED_RUN → FIN), con pantalla final
