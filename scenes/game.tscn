@@ -65,9 +65,9 @@ text = "mapa del ratón (M2)"
 
 [node name="hud" type="PanelContainer" parent="ui" unique_id=595532731]
 offset_left = 672.0
-offset_top = 452.0
+offset_top = 400.0
 offset_right = 1124.0
-offset_bottom = 692.0
+offset_bottom = 680.0
 script = ExtResource("4_hud")
 
 [node name="margen" type="MarginContainer" parent="ui/hud" unique_id=1082686277]
@@ -104,6 +104,13 @@ text = "tiempo: 0.0 s"
 [node name="record_label" type="Label" parent="ui/hud/margen/columna" unique_id=1410901036]
 layout_mode = 2
 text = "récord: —"
+
+[node name="lbl_laberinto" type="Label" parent="ui/hud/margen/columna" unique_id=222653523]
+layout_mode = 2
+text = "laberinto:"
+
+[node name="selector_laberinto" type="OptionButton" parent="ui/hud/margen/columna" unique_id=1082328440]
+layout_mode = 2
 
 [node name="botones" type="HBoxContainer" parent="ui/hud/margen/columna" unique_id=445910531]
 layout_mode = 2
@@ -157,6 +164,7 @@ layout_mode = 2
 text = "Jugar de nuevo"
 
 [connection signal="timeout" from="paso_timer" to="." method="_on_paso_timer_timeout"]
+[connection signal="item_selected" from="ui/hud/margen/columna/selector_laberinto" to="." method="_on_selector_item_selected"]
 [connection signal="pressed" from="ui/hud/margen/columna/botones/boton_pausa" to="." method="_on_boton_pausa_pressed"]
 [connection signal="pressed" from="ui/hud/margen/columna/botones/boton_paso" to="." method="_on_boton_paso_pressed"]
 [connection signal="pressed" from="ui/hud/margen/columna/botones/boton_velocidad" to="." method="_on_boton_velocidad_pressed"]
