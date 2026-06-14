@@ -46,6 +46,13 @@ var _visitadas: Dictionary = {}
 var _distancias: Array = []
 
 
+func get_mapa() -> Laberinto:
+	return _mapa
+ 
+func get_visitadas() -> Dictionary:
+	return _visitadas
+
+
 func preparar(ancho_: int, alto_: int, metas_: Array[Vector2i],
 		inicio_: Vector2i = Vector2i.ZERO) -> void:
 	ancho = ancho_
@@ -195,6 +202,15 @@ func _flood_fill(hasta: Array[Vector2i], solo_conocidas: bool) -> void:
 				_distancias[vecina.y][vecina.x] = dist_actual + 1
 				cola.append(vecina)
 
-# TODO (PARCIAL · M3): cuando termines de explorar y estés en el inicio,
-# calcula la ruta del speed run y guárdala para que game.gd la dibuje.
-# func ruta_speed_run() -> Array[Vector2i]:
+
+func iniciar_vuelta() -> void:
+	pass  # TODO (M3)
+ 
+func _paso_volviendo(_raton: Raton) -> void:
+	pass  # TODO (M3)
+ 
+func iniciar_speed_run() -> void:
+	pass  # TODO (M3)
+ 
+func _paso_speed_run(_raton: Raton) -> void:
+	pass  # TODO (M3)
