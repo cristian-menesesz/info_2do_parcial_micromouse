@@ -52,7 +52,7 @@ var _idx_speed: int = 0
 
 func get_mapa() -> Laberinto:
 	return _mapa
- 
+
 func get_visitadas() -> Dictionary:
 	return _visitadas
 
@@ -136,10 +136,12 @@ func _mover_hacia_menor_distancia(raton: Raton) -> void:
 		raton.girar_derecha()
 		return
 
-	_girar_hacia(raton, rumbo_objetivo)
-
+	# Si ya apuntamos al objetivo → avanzar.
+	# Si no → solo girar (avanzar ocurrirá en el siguiente tick).
 	if raton.rumbo == rumbo_objetivo:
 		raton.avanzar()
+	else:
+		_girar_hacia(raton, rumbo_objetivo)
 
 
 func _mejor_rumbo(desde: Vector2i, _rumbo_actual: int) -> int:
@@ -221,20 +223,15 @@ func _flood_fill(hasta: Array[Vector2i], solo_conocidas: bool) -> void:
 
 func iniciar_vuelta() -> void:
 	_fase = Fase.VOLVIENDO
-	_flood_fill([inicio], false)
+	# solo_conocidas=true — la vuelta solo usa celdas visitadas,
+	# nunca atraviesa zonas no exploradas cuyas paredes son desconocidas.
+	_flood_fill([inicio], true)
 
 func _paso_volviendo(raton: Raton) -> void:
-
-	_anotar_paredes(raton)
-
-	_flood_fill([inicio], false)
-
 	if raton.celda == inicio:
 		_calcular_ruta_speed_run()
 		_fase = Fase.SPEED_RUN
 		return
-
-	_mover_hacia_menor_distancia(raton)
 
 	_mover_hacia_menor_distancia(raton)
 
@@ -280,6 +277,7 @@ func _paso_speed_run(raton: Raton) -> void:
 	if dir_hacia == -1:
 		return
 
+	# una sola acción por tick.
 	if raton.rumbo == dir_hacia:
 		if raton.avanzar():
 			_idx_speed += 1

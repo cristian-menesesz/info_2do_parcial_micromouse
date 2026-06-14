@@ -20,7 +20,6 @@ var cerebro = null
 @onready var pantalla_final: PanelContainer = $ui/pantalla_final
 @onready var lbl_resultado_exp: Label = $ui/pantalla_final/col/exp_label
 @onready var lbl_resultado_speed: Label = $ui/pantalla_final/col/speed_label
-@onready var selector: OptionButton = $ui/hud/margen/columna/selector_laberinto
 
 @onready var overlay_visitadas: Node2D = $overlay_visitadas
 @onready var overlay_rutas: Node2D = $overlay_rutas
@@ -47,6 +46,7 @@ enum Fase { EXPLORANDO, META, VOLVIENDO, SPEED_RUN, FIN }
 var _fase: Fase = Fase.EXPLORANDO
 var _pasos_exploracion: int = 0
 var _pasos_speed_run: int = 0
+var _pasos_al_iniciar_speed_run: int = 0
 
 const RECORDS_PATH = "user://records.cfg"
 var _config: ConfigFile = ConfigFile.new()
@@ -84,6 +84,7 @@ func _iniciar_corrida() -> void:
 	_fase = Fase.EXPLORANDO
 	_pasos_exploracion = 0
 	_pasos_speed_run = 0
+	_pasos_al_iniciar_speed_run = 0
 
 	btn_pausa.text = "Pausa"
 	pantalla_final.visible = false
@@ -135,11 +136,12 @@ func _ejecutar_un_paso() -> void:
 			if laberinto.es_meta(raton.celda):
 				_meta_alcanzada()
 
-		# --- STEP 7 (M3): fases de vuelta y speed run ---
 		Fase.VOLVIENDO:
 			cerebro.paso(raton)
 			pasos_cambiados.emit(raton.pasos)
 			if cerebro._fase == CerebroEstudiante.Fase.SPEED_RUN:
+				# capturar pasos en el momento exacto que empieza el speed run
+				_pasos_al_iniciar_speed_run = raton.pasos
 				_fase = Fase.SPEED_RUN
 				fase_cambiada.emit("SPEED RUN")
 				overlay_rutas.queue_redraw()
@@ -149,7 +151,8 @@ func _ejecutar_un_paso() -> void:
 			pasos_cambiados.emit(raton.pasos)
 			overlay_rutas.queue_redraw()
 			if laberinto.es_meta(raton.celda):
-				_pasos_speed_run = raton.pasos - _pasos_exploracion
+				# contar solo los pasos del speed run, no los de la vuelta
+				_pasos_speed_run = raton.pasos - _pasos_al_iniciar_speed_run
 				_meta_alcanzada()
 
 		Fase.FIN:
@@ -196,81 +199,51 @@ func _meta_alcanzada() -> void:
 			lbl_resultado_exp.text = "Exploración: %d pasos" % _pasos_exploracion
 			lbl_resultado_speed.text = "Speed run: %d pasos" % _pasos_speed_run
 			pantalla_final.visible = true
-			
-			_guardar_record_si_mejor(_pasos_speed_run)
 
-			corrida_terminada.emit(
-				true,
-				_pasos_exploracion,
-				_pasos_speed_run
-			)
+			# M4: guardar récord si es mejor
+			if _pasos_speed_run > 0:
+				_guardar_record_si_mejor(_pasos_speed_run)
+
+			corrida_terminada.emit(true, _pasos_exploracion, _pasos_speed_run)
 
 
 func _poblar_selector() -> void:
+	var selector: OptionButton = $ui/hud/margen/columna/selector_laberinto
 	selector.clear()
-
 	var dir = DirAccess.open("res://mazes/")
 	if dir == null:
 		return
-
 	dir.list_dir_begin()
-
 	var archivos: Array[String] = []
-
 	var nombre = dir.get_next()
-
 	while nombre != "":
 		if nombre.ends_with(".maz"):
 			archivos.append(nombre)
-
 		nombre = dir.get_next()
-
 	archivos.sort()
-
 	for archivo in archivos:
 		selector.add_item(archivo)
-
 		if "res://mazes/" + archivo == archivo_laberinto:
 			selector.select(selector.item_count - 1)
 
 
 func _cargar_record() -> void:
-	var rec = _config.get_value(
-		"records",
-		archivo_laberinto,
-		-1
-	)
-
+	var rec = _config.get_value("records", archivo_laberinto, -1)
 	hud.update_record(rec)
 
 
 func _guardar_record_si_mejor(pasos: int) -> void:
-	var actual = _config.get_value(
-		"records",
-		archivo_laberinto,
-		999999
-	)
-
+	var actual = _config.get_value("records", archivo_laberinto, 999999)
 	if pasos < actual:
-		_config.set_value(
-			"records",
-			archivo_laberinto,
-			pasos
-		)
-
+		_config.set_value("records", archivo_laberinto, pasos)
 		_config.save(RECORDS_PATH)
-
 		hud.update_record(pasos)
 
 
 func _on_selector_item_selected(idx: int) -> void:
-	archivo_laberinto = (
-		"res://mazes/"
-		+ selector.get_item_text(idx)
-	)
-
+	var selector: OptionButton = $ui/hud/margen/columna/selector_laberinto
+	archivo_laberinto = "res://mazes/" + selector.get_item_text(idx)
 	paso_timer.stop()
-
 	_iniciar_corrida()
 
 

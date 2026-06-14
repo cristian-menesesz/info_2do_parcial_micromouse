@@ -18,12 +18,12 @@ usar_cerebro_estudiante = true
 script = ExtResource("2_vista")
 
 [node name="vista_mapa_raton" type="Node2D" parent="." unique_id=1417091394]
-position = Vector2(672, 0)
+position = Vector2(700, 0)
 script = ExtResource("2_vista")
 color_paredes = Color(0.55, 0.85, 1, 1)
 
 [node name="overlay_visitadas" type="Node2D" parent="." unique_id=1358724091]
-position = Vector2(672, 0)
+position = Vector2(700, 0)
 script = ExtResource("8_overlay_v")
 
 [node name="overlay_rutas" type="Node2D" parent="." unique_id=246921167]
@@ -57,16 +57,16 @@ offset_bottom = 36.0
 text = "MICROMOUSE — laberinto real (vista de dios)"
 
 [node name="titulo_mapa" type="Label" parent="ui" unique_id=2023650405]
-offset_left = 672.0
+offset_left = 700.0
 offset_top = 10.0
-offset_right = 1124.0
+offset_right = 1340.0
 offset_bottom = 36.0
 text = "mapa del ratón (M2)"
 
 [node name="hud" type="PanelContainer" parent="ui" unique_id=595532731]
-offset_left = 672.0
+offset_left = 700.0
 offset_top = 400.0
-offset_right = 1124.0
+offset_right = 1340.0
 offset_bottom = 680.0
 script = ExtResource("4_hud")
 
