@@ -73,9 +73,9 @@ func _iniciar_corrida() -> void:
 			laberinto.inicio
 		)
 
-	vista_mapa_raton.configurar(cerebro.get_mapa(), ORIGEN, tam_celda)
-	overlay_visitadas.configurar(cerebro, ORIGEN, tam_celda)
-	overlay_visitadas.visible = true
+		vista_mapa_raton.configurar(cerebro.get_mapa(), ORIGEN, tam_celda)
+		overlay_visitadas.configurar(cerebro, ORIGEN, tam_celda)
+		overlay_visitadas.visible = true
 	else:
 		cerebro = CerebroWallFollower.new()
 		overlay_visitadas.visible = false
