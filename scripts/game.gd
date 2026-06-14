@@ -1,20 +1,9 @@
 extends Node2D
 
-# Controlador principal: carga el laberinto, coloca al ratón y hace avanzar
-# el cerebro un paso por tick del paso_timer. El núcleo (laberinto, sensado,
-# movimiento, vista de dios) ya está resuelto; los huecos del parcial están
-# marcados con "TODO (PARCIAL · ...)".
-
-# Laberintos incluidos: 01_entrenamiento (8x8, perfecto: el wall-follower lo
-# resuelve), 02_clasico y 03_clasico (16x16 con ciclos y meta central, estilo
-# competencia: el wall-follower NO basta).
-@export_file("*.maz") var archivo_laberinto: String = "res://mazes/01_entrenamiento.maz"
-# Marca esta casilla (en el Inspector del nodo Game) para usar tu cerebro.
+@export_file("*.maz") var archivo_laberinto: String = "res://mazes/03_clasico.maz"
 @export var usar_cerebro_estudiante: bool = false
 
 const ORIGEN := Vector2(28, 44)
-# La vista de dios dispone de ~608 px; la celda se adapta al tamaño del
-# laberinto (38 px en los 16x16, más grande en los de entrenamiento).
 var tam_celda := 38.0
 
 var laberinto: Laberinto
@@ -32,11 +21,12 @@ var cerebro = null
 @onready var lbl_resultado_exp: Label = $ui/pantalla_final/col/exp_label
 @onready var lbl_resultado_speed: Label = $ui/pantalla_final/col/speed_label
 
+@onready var overlay_visitadas: Node2D = $overlay_visitadas
+@onready var overlay_rutas: Node2D = $overlay_rutas
+
 @onready var sfx_paso: AudioStreamPlayer = $sfx_paso
 @onready var sfx_choque: AudioStreamPlayer = $sfx_choque
 @onready var sfx_meta: AudioStreamPlayer = $sfx_meta
-
-@onready var overlay_visitadas: Node2D = $overlay_visitadas
 
 signal pasos_cambiados(pasos: int)
 signal visitadas_cambiadas(cantidad: int)
@@ -72,13 +62,16 @@ func _iniciar_corrida() -> void:
 			laberinto.metas,
 			laberinto.inicio
 		)
-
 		vista_mapa_raton.configurar(cerebro.get_mapa(), ORIGEN, tam_celda)
 		overlay_visitadas.configurar(cerebro, ORIGEN, tam_celda)
+		# --- STEP 7 (M3): conectar overlay de rutas ---
+		overlay_rutas.configurar(cerebro, ORIGEN, tam_celda)
 		overlay_visitadas.visible = true
+		overlay_rutas.visible = true
 	else:
 		cerebro = CerebroWallFollower.new()
 		overlay_visitadas.visible = false
+		overlay_rutas.visible = false
 
 	_visitadas.clear()
 	_tiempo_inicio = Time.get_ticks_msec()
@@ -89,12 +82,10 @@ func _iniciar_corrida() -> void:
 	_pasos_speed_run = 0
 
 	btn_pausa.text = "Pausa"
-
 	pantalla_final.visible = false
 
 	paso_timer.wait_time = VELOCIDADES[_idx_vel]
 	paso_timer.start()
-
 	fase_cambiada.emit("EXPLORANDO")
 
 
@@ -109,10 +100,6 @@ func _ready() -> void:
 	pantalla_final.visible = false
 
 	_iniciar_corrida()
-	# La vista derecha ("mapa del ratón") queda vacía hasta que la conectes:
-	# TODO (PARCIAL · M2): configura vista_mapa_raton con el laberinto que TU
-	# cerebro descubre (Laberinto.vacio + poner_pared al sensar) y redibuja
-	# cada vez que aprenda una pared. Distingue visitadas / no visitadas.
 
 
 func _process(_delta: float) -> void:
@@ -128,9 +115,7 @@ func _ejecutar_un_paso() -> void:
 	match _fase:
 		Fase.EXPLORANDO:
 			cerebro.paso(raton)
-
 			_visitadas[raton.celda] = true
-
 			pasos_cambiados.emit(raton.pasos)
 			visitadas_cambiadas.emit(_visitadas.size())
 
@@ -141,13 +126,22 @@ func _ejecutar_un_paso() -> void:
 			if laberinto.es_meta(raton.celda):
 				_meta_alcanzada()
 
+		# --- STEP 7 (M3): fases de vuelta y speed run ---
 		Fase.VOLVIENDO:
-			# TODO (M3)
-			pass
+			cerebro.paso(raton)
+			pasos_cambiados.emit(raton.pasos)
+			if cerebro._fase == CerebroEstudiante.Fase.SPEED_RUN:
+				_fase = Fase.SPEED_RUN
+				fase_cambiada.emit("SPEED RUN")
+				overlay_rutas.queue_redraw()
 
 		Fase.SPEED_RUN:
-			# TODO (M3)
-			pass
+			cerebro.paso(raton)
+			pasos_cambiados.emit(raton.pasos)
+			overlay_rutas.queue_redraw()
+			if laberinto.es_meta(raton.celda):
+				_pasos_speed_run = raton.pasos - _pasos_exploracion
+				_meta_alcanzada()
 
 		Fase.FIN:
 			paso_timer.stop()
@@ -158,31 +152,46 @@ func _on_paso_timer_timeout() -> void:
 
 
 func _meta_alcanzada() -> void:
-	_pasos_exploracion = raton.pasos
-	_fase = Fase.META
-	sfx_meta.play()
-	fase_cambiada.emit("META")
-	print("¡Meta alcanzada en ", _pasos_exploracion, " pasos!")
+	match _fase:
+		Fase.EXPLORANDO:
+			# Primera llegada a la meta
+			_pasos_exploracion = raton.pasos
+			_fase = Fase.META
+			sfx_meta.play()
+			fase_cambiada.emit("META")
+			print("¡Meta alcanzada en ", _pasos_exploracion, " pasos!")
 
-	# Por ahora va directo a FIN. En M3 pasará a VOLVIENDO primero.
-	_fase = Fase.FIN
-	_corrida_activa = false
-	paso_timer.stop()
-	fase_cambiada.emit("FIN")
+			if usar_cerebro_estudiante:
+				# --- STEP 7 (M3): iniciar vuelta al inicio ---
+				cerebro.iniciar_vuelta()
+				_fase = Fase.VOLVIENDO
+				fase_cambiada.emit("VOLVIENDO")
+			else:
+				_fase = Fase.FIN
+				_corrida_activa = false
+				paso_timer.stop()
+				fase_cambiada.emit("FIN")
+				lbl_resultado_exp.text = "Exploración: %d pasos" % _pasos_exploracion
+				lbl_resultado_speed.text = "Speed run: (solo cerebro estudiante)"
+				pantalla_final.visible = true
+				corrida_terminada.emit(true, _pasos_exploracion, 0)
 
-	lbl_resultado_exp.text = "Exploración: %d pasos" % _pasos_exploracion
-	lbl_resultado_speed.text = "Speed run: (pendiente — M3)"
-	pantalla_final.visible = true
+		Fase.SPEED_RUN:
+			# Speed run terminado
+			_fase = Fase.FIN
+			_corrida_activa = false
+			paso_timer.stop()
+			fase_cambiada.emit("FIN")
+			overlay_rutas.queue_redraw()
 
-	corrida_terminada.emit(true, _pasos_exploracion, 0)
-	# TODO (PARCIAL · M3): aquí continúa el ciclo: volver al inicio y ejecutar
-	# el speed run sobre el mapa descubierto, dibujando ambas rutas.
-	# TODO (PARCIAL · M4): guarda el récord (mejores pasos) de ESTE laberinto
-	# en user:// y muéstralo; añade un selector para cambiar de laberinto sin
-	# tocar código.
+			lbl_resultado_exp.text = "Exploración: %d pasos" % _pasos_exploracion
+			lbl_resultado_speed.text = "Speed run: %d pasos" % _pasos_speed_run
+			pantalla_final.visible = true
+			corrida_terminada.emit(true, _pasos_exploracion, _pasos_speed_run)
+			# TODO (PARCIAL · M4): guarda el récord (mejores pasos) de ESTE laberinto
+			# en user:// y muéstralo; añade un selector para cambiar de laberinto sin
+			# tocar código.
 
-
-# --- Botones del panel (ya conectados en el editor; cuerpos por hacer) ---
 
 func _on_boton_pausa_pressed() -> void:
 	_pausado = !_pausado

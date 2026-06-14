@@ -8,147 +8,151 @@
 [ext_resource type="AudioStream" uid="uid://t630qs81orhp" path="res://assets/sounds/choque.wav" id="6_choque"]
 [ext_resource type="AudioStream" uid="uid://2ltxy0ijqbrw" path="res://assets/sounds/meta.wav" id="7_meta"]
 [ext_resource type="Script" uid="uid://dfmjskurl3jk7" path="res://scripts/overlay_visitadas.gd" id="8_overlay_v"]
+[ext_resource type="Script" uid="uid://c7n1r54222hhk" path="res://scripts/overlay_rutas.gd" id="9_overlay_r"]
 
-[node name="Game" type="Node2D" unique_id=645129310]
+[node name="Game" type="Node2D" unique_id=607070088]
 script = ExtResource("1_game")
 usar_cerebro_estudiante = true
 
-[node name="vista_dios" type="Node2D" parent="." unique_id=664379431]
+[node name="vista_dios" type="Node2D" parent="." unique_id=1340066675]
 script = ExtResource("2_vista")
 
-[node name="vista_mapa_raton" type="Node2D" parent="." unique_id=1079961378]
+[node name="vista_mapa_raton" type="Node2D" parent="." unique_id=1417091394]
 position = Vector2(672, 0)
 script = ExtResource("2_vista")
 color_paredes = Color(0.55, 0.85, 1, 1)
 
-[node name="overlay_visitadas" type="Node2D" parent="." unique_id=316862729]
+[node name="overlay_visitadas" type="Node2D" parent="." unique_id=1358724091]
 position = Vector2(672, 0)
 script = ExtResource("8_overlay_v")
 
-[node name="raton" type="Node2D" parent="." unique_id=1496242028]
+[node name="overlay_rutas" type="Node2D" parent="." unique_id=246921167]
+script = ExtResource("9_overlay_r")
+
+[node name="raton" type="Node2D" parent="." unique_id=2109184497]
 script = ExtResource("3_raton")
 
-[node name="paso_timer" type="Timer" parent="." unique_id=351901739]
+[node name="paso_timer" type="Timer" parent="." unique_id=1399588314]
 wait_time = 0.12
 autostart = true
 
-[node name="sfx_paso" type="AudioStreamPlayer" parent="." unique_id=1050567959]
+[node name="sfx_paso" type="AudioStreamPlayer" parent="." unique_id=61556972]
 stream = ExtResource("5_paso")
 volume_db = -6.0
 
-[node name="sfx_choque" type="AudioStreamPlayer" parent="." unique_id=1491481086]
+[node name="sfx_choque" type="AudioStreamPlayer" parent="." unique_id=1143490943]
 stream = ExtResource("6_choque")
 volume_db = -3.0
 
-[node name="sfx_meta" type="AudioStreamPlayer" parent="." unique_id=2087750870]
+[node name="sfx_meta" type="AudioStreamPlayer" parent="." unique_id=2040426533]
 stream = ExtResource("7_meta")
 
-[node name="ui" type="CanvasLayer" parent="." unique_id=796348873]
+[node name="ui" type="CanvasLayer" parent="." unique_id=942894298]
 
-[node name="titulo_dios" type="Label" parent="ui" unique_id=1639892390]
+[node name="titulo_dios" type="Label" parent="ui" unique_id=617488739]
 offset_left = 28.0
 offset_top = 10.0
 offset_right = 636.0
 offset_bottom = 36.0
 text = "MICROMOUSE — laberinto real (vista de dios)"
 
-[node name="titulo_mapa" type="Label" parent="ui" unique_id=2078235654]
+[node name="titulo_mapa" type="Label" parent="ui" unique_id=2023650405]
 offset_left = 672.0
 offset_top = 10.0
 offset_right = 1124.0
 offset_bottom = 36.0
 text = "mapa del ratón (M2)"
 
-[node name="hud" type="PanelContainer" parent="ui" unique_id=1548900628]
+[node name="hud" type="PanelContainer" parent="ui" unique_id=595532731]
 offset_left = 672.0
 offset_top = 452.0
 offset_right = 1124.0
 offset_bottom = 692.0
 script = ExtResource("4_hud")
 
-[node name="margen" type="MarginContainer" parent="ui/hud" unique_id=1281214707]
+[node name="margen" type="MarginContainer" parent="ui/hud" unique_id=1082686277]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 10
 
-[node name="columna" type="VBoxContainer" parent="ui/hud/margen" unique_id=147219985]
+[node name="columna" type="VBoxContainer" parent="ui/hud/margen" unique_id=569138827]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="titulo_label" type="Label" parent="ui/hud/margen/columna" unique_id=1172475629]
+[node name="titulo_label" type="Label" parent="ui/hud/margen/columna" unique_id=1040341595]
 layout_mode = 2
 text = "TELEMETRÍA"
 
-[node name="fase_label" type="Label" parent="ui/hud/margen/columna" unique_id=561237711]
+[node name="fase_label" type="Label" parent="ui/hud/margen/columna" unique_id=1102348712]
 layout_mode = 2
 text = "fase: —"
 
-[node name="pasos_label" type="Label" parent="ui/hud/margen/columna" unique_id=914501356]
+[node name="pasos_label" type="Label" parent="ui/hud/margen/columna" unique_id=1329212305]
 layout_mode = 2
 text = "pasos: 0"
 
-[node name="visitadas_label" type="Label" parent="ui/hud/margen/columna" unique_id=1976434364]
+[node name="visitadas_label" type="Label" parent="ui/hud/margen/columna" unique_id=1777100335]
 layout_mode = 2
 text = "visitadas: 0"
 
-[node name="tiempo_label" type="Label" parent="ui/hud/margen/columna" unique_id=350902341]
+[node name="tiempo_label" type="Label" parent="ui/hud/margen/columna" unique_id=748344674]
 layout_mode = 2
 text = "tiempo: 0.0 s"
 
-[node name="record_label" type="Label" parent="ui/hud/margen/columna" unique_id=1228835641]
+[node name="record_label" type="Label" parent="ui/hud/margen/columna" unique_id=1410901036]
 layout_mode = 2
 text = "récord: —"
 
-[node name="botones" type="HBoxContainer" parent="ui/hud/margen/columna" unique_id=389657674]
+[node name="botones" type="HBoxContainer" parent="ui/hud/margen/columna" unique_id=445910531]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="boton_pausa" type="Button" parent="ui/hud/margen/columna/botones" unique_id=248302060]
+[node name="boton_pausa" type="Button" parent="ui/hud/margen/columna/botones" unique_id=436236319]
 layout_mode = 2
 text = "Pausa"
 
-[node name="boton_paso" type="Button" parent="ui/hud/margen/columna/botones" unique_id=2105383607]
+[node name="boton_paso" type="Button" parent="ui/hud/margen/columna/botones" unique_id=549639934]
 layout_mode = 2
 text = "Paso"
 
-[node name="boton_velocidad" type="Button" parent="ui/hud/margen/columna/botones" unique_id=1098037904]
+[node name="boton_velocidad" type="Button" parent="ui/hud/margen/columna/botones" unique_id=1462151505]
 layout_mode = 2
 text = "Vel x1"
 
-[node name="boton_reiniciar" type="Button" parent="ui/hud/margen/columna/botones" unique_id=553839850]
+[node name="boton_reiniciar" type="Button" parent="ui/hud/margen/columna/botones" unique_id=1393416658]
 layout_mode = 2
 text = "Reiniciar"
 
-[node name="pantalla_final" type="PanelContainer" parent="ui" unique_id=973454983]
+[node name="pantalla_final" type="PanelContainer" parent="ui" unique_id=226038023]
 visible = false
 offset_left = 280.0
 offset_top = 200.0
 offset_right = 840.0
 offset_bottom = 480.0
 
-[node name="col" type="VBoxContainer" parent="ui/pantalla_final" unique_id=699585051]
+[node name="col" type="VBoxContainer" parent="ui/pantalla_final" unique_id=1705368063]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="titulo_final" type="Label" parent="ui/pantalla_final/col" unique_id=985656679]
+[node name="titulo_final" type="Label" parent="ui/pantalla_final/col" unique_id=1289700245]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "🏁  CORRIDA TERMINADA"
 horizontal_alignment = 1
 
-[node name="exp_label" type="Label" parent="ui/pantalla_final/col" unique_id=922925720]
+[node name="exp_label" type="Label" parent="ui/pantalla_final/col" unique_id=1025971173]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Exploración: — pasos"
 
-[node name="speed_label" type="Label" parent="ui/pantalla_final/col" unique_id=896957148]
+[node name="speed_label" type="Label" parent="ui/pantalla_final/col" unique_id=1927980667]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Speed run: — pasos"
 
-[node name="btn_jugar_nuevo" type="Button" parent="ui/pantalla_final/col" unique_id=558063199]
+[node name="btn_jugar_nuevo" type="Button" parent="ui/pantalla_final/col" unique_id=406840056]
 layout_mode = 2
 text = "Jugar de nuevo"
 
