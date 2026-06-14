@@ -45,12 +45,22 @@ var _mapa: Laberinto = null
 var _visitadas: Dictionary = {}
 var _distancias: Array = []
 
+var _ruta_exploracion: Array[Vector2i] = []
+var _ruta_speed_run: Array[Vector2i] = []
+var _idx_speed: int = 0
+
 
 func get_mapa() -> Laberinto:
 	return _mapa
  
 func get_visitadas() -> Dictionary:
 	return _visitadas
+
+func ruta_exploracion() -> Array[Vector2i]:
+	return _ruta_exploracion
+
+func ruta_speed_run() -> Array[Vector2i]:
+	return _ruta_speed_run
 
 
 func preparar(ancho_: int, alto_: int, metas_: Array[Vector2i],
@@ -66,6 +76,11 @@ func preparar(ancho_: int, alto_: int, metas_: Array[Vector2i],
 	_mapa.metas = metas.duplicate()
 
 	_visitadas.clear()
+
+	_ruta_exploracion.clear()
+	_ruta_speed_run.clear()
+	_idx_speed = 0
+
 	_fase = Fase.EXPLORANDO
 	_flood_fill(metas, false)
 
@@ -86,6 +101,7 @@ func _paso_explorando(raton: Raton) -> void:
 	# 2. Registrar celda visitada
 	if not _visitadas.has(raton.celda):
 		_visitadas[raton.celda] = true
+		_ruta_exploracion.append(raton.celda)
 
 	# 3. Recalcular flood-fill (las paredes nuevas pueden cambiar distancias)
 	_flood_fill(metas, false)
@@ -204,13 +220,77 @@ func _flood_fill(hasta: Array[Vector2i], solo_conocidas: bool) -> void:
 
 
 func iniciar_vuelta() -> void:
-	pass  # TODO (M3)
- 
-func _paso_volviendo(_raton: Raton) -> void:
-	pass  # TODO (M3)
- 
+	_fase = Fase.VOLVIENDO
+	_flood_fill([inicio], false)
+
+func _paso_volviendo(raton: Raton) -> void:
+
+	_anotar_paredes(raton)
+
+	_flood_fill([inicio], false)
+
+	if raton.celda == inicio:
+		_calcular_ruta_speed_run()
+		_fase = Fase.SPEED_RUN
+		return
+
+	_mover_hacia_menor_distancia(raton)
+
+	_mover_hacia_menor_distancia(raton)
+
+func _calcular_ruta_speed_run() -> void:
+	_flood_fill(metas, true)
+
+	_ruta_speed_run.clear()
+
+	var celda_actual = inicio
+
+	_ruta_speed_run.append(celda_actual)
+
+	var max_iter = ancho * alto
+
+	while not _mapa.es_meta(celda_actual) and max_iter > 0:
+		max_iter -= 1
+
+		var mejor_dir = _mejor_rumbo(celda_actual, 0)
+
+		if mejor_dir == -1:
+			break
+
+		celda_actual += Laberinto.DELTAS[mejor_dir]
+
+		_ruta_speed_run.append(celda_actual)
+
 func iniciar_speed_run() -> void:
-	pass  # TODO (M3)
- 
-func _paso_speed_run(_raton: Raton) -> void:
-	pass  # TODO (M3)
+	_fase = Fase.SPEED_RUN
+	_idx_speed = 0
+	_flood_fill(metas, true)
+
+func _paso_speed_run(raton: Raton) -> void:
+	if _idx_speed >= _ruta_speed_run.size() - 1:
+		return
+
+	var celda_destino = _ruta_speed_run[_idx_speed + 1]
+
+	var dir_hacia = _direccion_entre(
+		raton.celda,
+		celda_destino
+	)
+
+	if dir_hacia == -1:
+		return
+
+	if raton.rumbo == dir_hacia:
+		if raton.avanzar():
+			_idx_speed += 1
+	else:
+		_girar_hacia(raton, dir_hacia)
+
+func _direccion_entre(desde: Vector2i, hasta: Vector2i) -> int:
+	var delta = hasta - desde
+
+	for dir in range(4):
+		if Laberinto.DELTAS[dir] == delta:
+			return dir
+
+	return -1
