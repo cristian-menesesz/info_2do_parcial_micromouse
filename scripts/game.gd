@@ -36,6 +36,8 @@ var cerebro = null
 @onready var sfx_choque: AudioStreamPlayer = $sfx_choque
 @onready var sfx_meta: AudioStreamPlayer = $sfx_meta
 
+@onready var overlay_visitadas: Node2D = $overlay_visitadas
+
 signal pasos_cambiados(pasos: int)
 signal visitadas_cambiadas(cantidad: int)
 signal fase_cambiada(nombre: String)
@@ -70,8 +72,13 @@ func _iniciar_corrida() -> void:
 			laberinto.metas,
 			laberinto.inicio
 		)
+
+	vista_mapa_raton.configurar(cerebro.get_mapa(), ORIGEN, tam_celda)
+	overlay_visitadas.configurar(cerebro, ORIGEN, tam_celda)
+	overlay_visitadas.visible = true
 	else:
 		cerebro = CerebroWallFollower.new()
+		overlay_visitadas.visible = false
 
 	_visitadas.clear()
 	_tiempo_inicio = Time.get_ticks_msec()
@@ -126,6 +133,10 @@ func _ejecutar_un_paso() -> void:
 
 			pasos_cambiados.emit(raton.pasos)
 			visitadas_cambiadas.emit(_visitadas.size())
+
+			if usar_cerebro_estudiante:
+				vista_mapa_raton.queue_redraw()
+				overlay_visitadas.queue_redraw()
 
 			if laberinto.es_meta(raton.celda):
 				_meta_alcanzada()
