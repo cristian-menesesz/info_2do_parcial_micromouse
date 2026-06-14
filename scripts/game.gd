@@ -20,6 +20,7 @@ var cerebro = null
 @onready var pantalla_final: PanelContainer = $ui/pantalla_final
 @onready var lbl_resultado_exp: Label = $ui/pantalla_final/col/exp_label
 @onready var lbl_resultado_speed: Label = $ui/pantalla_final/col/speed_label
+@onready var selector: OptionButton = $ui/hud/margen/columna/selector_laberinto
 
 @onready var overlay_visitadas: Node2D = $overlay_visitadas
 @onready var overlay_rutas: Node2D = $overlay_rutas
@@ -46,6 +47,9 @@ enum Fase { EXPLORANDO, META, VOLVIENDO, SPEED_RUN, FIN }
 var _fase: Fase = Fase.EXPLORANDO
 var _pasos_exploracion: int = 0
 var _pasos_speed_run: int = 0
+
+const RECORDS_PATH = "user://records.cfg"
+var _config: ConfigFile = ConfigFile.new()
 
 
 func _iniciar_corrida() -> void:
@@ -88,6 +92,8 @@ func _iniciar_corrida() -> void:
 	paso_timer.start()
 	fase_cambiada.emit("EXPLORANDO")
 
+	_cargar_record()
+
 
 func _ready() -> void:
 	pasos_cambiados.connect(hud.update_pasos)
@@ -98,6 +104,9 @@ func _ready() -> void:
 	raton.paso_terminado.connect(func(): sfx_paso.play())
 
 	pantalla_final.visible = false
+
+	_config.load(RECORDS_PATH)
+	_poblar_selector()
 
 	_iniciar_corrida()
 
@@ -187,10 +196,82 @@ func _meta_alcanzada() -> void:
 			lbl_resultado_exp.text = "Exploración: %d pasos" % _pasos_exploracion
 			lbl_resultado_speed.text = "Speed run: %d pasos" % _pasos_speed_run
 			pantalla_final.visible = true
-			corrida_terminada.emit(true, _pasos_exploracion, _pasos_speed_run)
-			# TODO (PARCIAL · M4): guarda el récord (mejores pasos) de ESTE laberinto
-			# en user:// y muéstralo; añade un selector para cambiar de laberinto sin
-			# tocar código.
+			
+			_guardar_record_si_mejor(_pasos_speed_run)
+
+			corrida_terminada.emit(
+				true,
+				_pasos_exploracion,
+				_pasos_speed_run
+			)
+
+
+func _poblar_selector() -> void:
+	selector.clear()
+
+	var dir = DirAccess.open("res://mazes/")
+	if dir == null:
+		return
+
+	dir.list_dir_begin()
+
+	var archivos: Array[String] = []
+
+	var nombre = dir.get_next()
+
+	while nombre != "":
+		if nombre.ends_with(".maz"):
+			archivos.append(nombre)
+
+		nombre = dir.get_next()
+
+	archivos.sort()
+
+	for archivo in archivos:
+		selector.add_item(archivo)
+
+		if "res://mazes/" + archivo == archivo_laberinto:
+			selector.select(selector.item_count - 1)
+
+
+func _cargar_record() -> void:
+	var rec = _config.get_value(
+		"records",
+		archivo_laberinto,
+		-1
+	)
+
+	hud.update_record(rec)
+
+
+func _guardar_record_si_mejor(pasos: int) -> void:
+	var actual = _config.get_value(
+		"records",
+		archivo_laberinto,
+		999999
+	)
+
+	if pasos < actual:
+		_config.set_value(
+			"records",
+			archivo_laberinto,
+			pasos
+		)
+
+		_config.save(RECORDS_PATH)
+
+		hud.update_record(pasos)
+
+
+func _on_selector_item_selected(idx: int) -> void:
+	archivo_laberinto = (
+		"res://mazes/"
+		+ selector.get_item_text(idx)
+	)
+
+	paso_timer.stop()
+
+	_iniciar_corrida()
 
 
 func _on_boton_pausa_pressed() -> void:
